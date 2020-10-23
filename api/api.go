@@ -1,9 +1,9 @@
 package api
 
 import (
-	"github.com/Sean-Der/fail2go"
 	"github.com/Strum355/log"
 	"github.com/go-chi/chi"
+	"github.com/strangeman/fail2go"
 
 	"net/http"
 )

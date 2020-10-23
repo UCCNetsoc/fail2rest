@@ -1,10 +1,10 @@
 package main
 
 import (
-	"github.com/Sean-Der/fail2go"
 	"github.com/Strum355/log"
 	"github.com/go-chi/chi"
 	"github.com/spf13/viper"
+	"github.com/strangeman/fail2go"
 
 	"github.com/UCCNetsoc/fail2rest/api"
 	"github.com/UCCNetsoc/fail2rest/config"
@@ -44,25 +44,27 @@ func main() {
 
 	r := chi.NewRouter()
 
+	var err error
 	// Register service with Consul
-	consul := services.ConsulService{
-		ConsulHost:  viper.GetString("consul.host"),
-		ConsulToken: viper.GetString("consul.token"),
-		ServiceAddr: "127.0.0.1",
-		Port:        viper.GetInt("http.port"),
-		TTL:         time.Second * 5,
+	if viper.GetBool("consul.enabled") {
+		consul := services.ConsulService{
+			ConsulHost:  viper.GetString("consul.host"),
+			ConsulToken: viper.GetString("consul.token"),
+			ServiceAddr: "127.0.0.1",
+			Port:        viper.GetInt("http.port"),
+			TTL:         time.Second * 5,
+		}
+		err = consul.Setup()
+		if err != nil {
+			log.WithError(err).Error("Could not setup Consul service")
+			os.Exit(1)
+		}
+		err = consul.Register()
+		if err != nil {
+			log.WithError(err).Error("Could not register with Consul service")
+			os.Exit(1)
+		}
 	}
-	err := consul.Setup()
-	if err != nil {
-		log.WithError(err).Error("Could not setup Consul service")
-		os.Exit(1)
-	}
-	err = consul.Register()
-	if err != nil {
-		log.WithError(err).Error("Could not register with Consul service")
-		os.Exit(1)
-	}
-
 	// Initialise API
 	api := api.API{Fail2Conn: conn}
 	api.Register(r)
